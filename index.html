@@ -1,96 +1,203 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Web Generator</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0f0c29;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      font-family: system-ui, -apple-system, sans-serif;
       min-height: 100vh;
-      padding: 16px;
-      flex-direction: column;
-      gap: 20px;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: #0a0a14;
     }
 
-    .bar {
-      width: 100%;
-      max-width: 640px;
+    .container {
       display: flex;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .logo { width: 48px; height: 48px; }
+    .logo svg { width: 100%; height: 100%; }
+
+    .title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 200;
+      color: #f0f0f8;
+      text-align: center;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: #8888a0;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .search-wrapper { width: 100%; }
+
+    .bar {
+      display: flex;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       overflow: hidden;
     }
 
     .bar input {
       flex: 1;
-      padding: 14px 18px;
+      padding: 16px 20px;
       background: transparent;
       border: none;
-      color: #e0e0e0;
+      color: #e0e0ec;
       font-size: 15px;
-      outline: none;
       font-family: "SF Mono", "Fira Code", monospace;
+      min-width: 0;
     }
 
-    .bar input::placeholder {
-      color: #555;
-    }
+    .bar input::placeholder { color: #555568; }
 
     .bar button {
-      padding: 14px 22px;
+      position: relative;
+      flex-shrink: 0;
+      padding: 16px 24px;
       border: none;
-      background: linear-gradient(90deg, #667eea, #764ba2);
-      color: #fff;
+      background: #f5a623;
+      color: #0a0a14;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      white-space: nowrap;
+      border-radius: 0 14px 14px 0;
     }
 
-    .bar button:hover {
-      opacity: 0.85;
+    .bar button.loading {
+      background: #3a3a50;
+      color: transparent;
+      pointer-events: none;
     }
 
-    .hint {
-      color: #666;
-      font-size: 13px;
+    .bar button.loading::after {
+      content: "";
+      position: absolute;
+      inset: 50% auto auto 50%;
+      width: 20px; height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid rgba(255,255,255,0.15);
+      border-top-color: #f5a623;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      display: none;
+      font-size: 0.85rem;
+      color: #666680;
       text-align: center;
+      margin-top: 10px;
     }
 
-    .hint code {
-      color: #888;
-      background: rgba(255, 255, 255, 0.06);
-      padding: 2px 6px;
-      border-radius: 4px;
+    .loading-text.visible { display: block; }
+
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .example-card {
+      padding: 10px 18px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #8888a0;
+      font-size: 0.85rem;
+      font-family: "SF Mono", "Fira Code", monospace;
+      cursor: pointer;
+      transition: border-color .25s, transform .25s, color .25s;
+    }
+
+    .example-card:hover {
+      border-color: rgba(0, 212, 170, 0.4);
+      color: #c0c0d8;
+      transform: translateY(-2px);
+    }
+
+    .example-card:active { transform: translateY(0); }
+
+    .footer {
+      font-size: 0.75rem;
+      color: #454560;
+      text-align: center;
     }
   </style>
 </head>
-
 <body>
-  <div class="bar">
-    <input type="text" id="pathInput" placeholder="/baidu.com" onkeydown="if(event.key==='Enter')go()" autofocus>
-    <button onclick="go()">前往</button>
-  </div>
-  <div class="hint">输入 <code>/目标站点/路径</code> 即可浏览<br>如 <code>/baidu.com</code>、<code>/github.com/login</code></div>
-  <script>
-    function go() {
-      var v = document.getElementById('pathInput').value.trim();
-      if (v) location.href = (v.startsWith('/') ? '' : '/') + v;
-    }
-  </script>
-</body>
 
+<div class="container">
+
+  <div class="logo" aria-hidden="true">
+    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="lg" x1="0" y1="0" x2="48" y2="48">
+          <stop offset="0%" stop-color="#00d4aa" />
+          <stop offset="100%" stop-color="#f5a623" />
+        </linearGradient>
+      </defs>
+      <circle cx="24" cy="24" r="18" stroke="url(#lg)" stroke-width="1.8" opacity="0.5" />
+      <path d="M24 6 A18 18 0 0 0 6 24" stroke="url(#lg)" stroke-width="2" stroke-linecap="round" />
+      <path d="M24 42 A18 18 0 0 1 42 24" stroke="url(#lg)" stroke-width="2" stroke-linecap="round" />
+      <circle cx="24" cy="24" r="3" fill="#f5a623" opacity="0.9" />
+    </svg>
+  </div>
+
+  <div>
+    <h1 class="title">AI Web Generator</h1>
+    <p class="subtitle">URL 即 Prompt — 输入目标站点，AI 即时生成</p>
+  </div>
+
+  <div class="search-wrapper">
+    <div class="bar">
+      <input type="text" id="pathInput" placeholder="/baidu.com" autofocus autocomplete="off" spellcheck="false"
+        onkeydown="if(event.key==='Enter')go()">
+      <button id="goBtn" onclick="go()">前往</button>
+    </div>
+    <p class="loading-text" id="loadingText">AI 生成中…</p>
+  </div>
+
+  <div class="examples">
+    <div class="example-card" onclick="fillExample(this)">/baidu.com</div>
+    <div class="example-card" onclick="fillExample(this)">/github.com/login</div>
+    <div class="example-card" onclick="fillExample(this)">/google.com/search</div>
+  </div>
+
+  <p class="footer">Powered by AI · 每次访问由 AI 即时生成</p>
+</div>
+
+<script>
+  function go() {
+    var v = document.getElementById('pathInput').value.trim();
+    if (!v) return;
+    document.getElementById('goBtn').classList.add('loading');
+    document.getElementById('loadingText').classList.add('visible');
+    location.href = (v.startsWith('/') ? '' : '/') + v;
+  }
+
+  function fillExample(el) {
+    document.getElementById('pathInput').value = el.textContent.trim();
+    document.getElementById('pathInput').focus();
+  }
+</script>
+</body>
 </html>

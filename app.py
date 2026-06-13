@@ -36,6 +36,7 @@ SYSTEM_PROMPT = (
     "- CSS用内联<style>，JS可用内联<script>或CDN\n"
     "- 响应式设计\n"
     "- 只输出HTML代码，不含任何解释或标记\n"
+    "- 用尽可能少的代码最大程度还原页面，过度冗长的代码会被截断导致页面缺失内容"
 )
 
 PROMPT_TEMPLATE = (
