@@ -11,7 +11,7 @@ from urllib.parse import urlparse, urlunparse
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
-from openai import APIConnectionError, APIError, APITimeoutError, OpenAI
+from openai import APIConnectionError, APIError, APITimeoutError, AsyncOpenAI
 
 load_dotenv()
 
@@ -22,28 +22,33 @@ MODEL = os.getenv("LLM_MODEL_NAME", "deepseek-chat")
 PORT = int(os.getenv("SERVER_PORT", "8000"))
 TEMPERATURE = float(os.getenv("DEFAULT_TEMPERATURE", "0.7"))
 
-client = OpenAI(base_url=BASE_URL, api_key=API_KEY)
+client = AsyncOpenAI(base_url=BASE_URL, api_key=API_KEY)
 
 # ── Prompt 模板 ──
 
-SYSTEM_PROMPT = (
-    "你是网站的忠实还原者。根据收到的HTTP请求，输出该页面真实应有的HTML内容。\n"
-    "视觉、布局、交互都必须与原站一致。\n\n"
-    "要求：\n"
-    "- 所有链接、表单、按钮真实可用，放心使用站内跳转（本站会处理）\n"
-    "- 链接/表单路径格式：/{host}/{path}，如 baidu.com 上的链接写为\n"
-    "  /baidu.com/news\n"
-    "- CSS用内联<style>，JS可用内联<script>或CDN\n"
-    "- 响应式设计\n"
-    "- 只输出HTML代码，不含任何解释或标记\n"
-    "- 用尽可能少的代码最大程度还原页面，过度冗长的代码会被截断导致页面缺失内容"
-)
+SYSTEM_PROMPT = """
+你是网站的忠实还原者。根据收到的HTTP请求，输出该页面真实应有的HTML内容。
 
-PROMPT_TEMPLATE = (
-    "以下是收到的原始HTTP请求：\n\n"
-    "{method} {path} HTTP/1.1\n{headers}{body}"
-    "\n---\n请根据以上请求生成完整HTML页面。"
-)
+要求：
+- 所有链接、表单、按钮真实可用，放心使用站内跳转（本站会处理）
+- 链接/表单路径格式：/{host}/{path}，如 baidu.com 上的链接写为 /baidu.com/news
+- CSS用内联<style>，JS可用内联<script>或CDN
+- 响应式设计
+- 只输出HTML代码，不含任何解释或标记
+- 用尽可能少的代码最大程度还原页面，过度冗长的代码会被截断导致页面缺失内容
+"""
+
+
+PROMPT_TEMPLATE = """
+以下是收到的原始HTTP请求：
+
+{method} {path} HTTP/1.1
+{headers}
+{body}
+
+---
+请根据以上请求生成完整HTML页面。
+"""
 
 
 # ── 工具函数 ──
@@ -129,7 +134,7 @@ async def generate_page(
     prompt = await build_raw_request(request, include_body)
 
     try:
-        resp = client.chat.completions.create(
+        resp = await client.chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
