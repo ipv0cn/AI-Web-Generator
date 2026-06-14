@@ -1,18 +1,38 @@
 # AI Web Generator
 
-URL即Prompt — 访问任意路径，AI即时生成对应的网页。
+URL 即 Prompt — 访问任意路径，AI 即时生成对应的内容。
 
 ## 用法
 
-浏览器地址栏输入 `/{host}/{path}`，后端调用 AI 还原该页面的 HTML。
+### 网页浏览
+
+浏览器地址栏输入 `/{host}/{path}`，AI 还原该页面的 HTML。
 
 ```text
-http://localhost:8000/baidu.com       → 还原百度首页
-http://localhost:8000/github.com/login → 还原 GitHub 登录页
-http://localhost:8000/google.com/search → 还原 Google 搜索页
+http://localhost:8000/baidu.com           → 还原百度首页
+http://localhost:8000/github.com/login    → 还原 GitHub 登录页
 ```
 
-所有链接、表单、按钮都真实可用，跳转在同一站点内完成。
+### API 调用
+
+设置 `Accept` 请求头指定格式，AI 返回对应格式的响应体。
+
+```bash
+# JSON
+curl -H "Accept: application/json" http://localhost:8000/api.example.com/users
+
+# XML
+curl -H "Accept: application/xml" http://localhost:8000/api.example.com/data
+
+# 纯文本 / 配置文件
+curl -H "Accept: text/plain" http://localhost:8000/example.com/config
+
+# POST 请求体也会传递给 AI
+curl -X POST -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"test"}' \
+  http://localhost:8000/api.example.com/users
+```
 
 ## 快速开始
 
@@ -45,7 +65,11 @@ open http://localhost:8000
 
 | 文件 | 说明 |
 | ------ | ------ |
-| `app.py` | FastAPI 后端，核心逻辑 |
+| `app.py` | 入口，FastAPI 应用与路由 |
+| `src/config.py` | 环境变量配置 |
+| `src/prompts.py` | System Prompt 与 Prompt 模板 |
+| `src/client_.py` | AsyncOpenAI 客户端实例 |
+| `src/utils.py` | 工具函数（URL解析、内容清洗、Content-Type推断） |
 | `index.html` | 引导页面 |
 | `.env.example` | 环境变量模板 |
 | `requirements.txt` | Python 依赖 |
